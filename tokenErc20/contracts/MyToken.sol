@@ -13,15 +13,20 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
 
     bool private suspended;
 
-    string public name;
-    string public symbol;
     uint8 public decimals;
     uint public totalSupply;
+
+    string public name;
+    string public symbol;
 
     mapping(address => uint) private balances;
     mapping(address => bool) private lockedAccount;
 
     mapping(address => mapping(address => uint)) private allowed;
+
+    event DistributeBatch(address indexed _to, uint amount);
+    event LockBatch(address indexed _account);
+    event UnlockBatch(address indexed _account);
 
     modifier onlyTokenOwner() {
         require(tokenOwner == msg.sender);
@@ -177,6 +182,23 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
     }
 
     /**
+     * @dev Batch function for token distribute.
+     * @param _to List of Recipient.
+     * @param _amount List of token amount.
+     */
+    function distributeBatch(address[] _to, uint[] _amount) external onlyTokenOwner returns (bool success) {
+        require(_to.length < 100);
+
+        for(uint i = 0; i < _to.length; i++) {
+            if (!distribute(_to[i], _amount[i])) {
+                emit DistributeBatch(_to[i], _amount[i]);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * @dev Issue the new tokens.
      * @param _to Recipient of token.
      * @param _amount Tokens amount.
@@ -227,6 +249,38 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
 
         delete lockedAccount[_account];
         emit UnLocked(_account);
+        return true;
+    }
+
+    /**
+     * @dev Batch process the account lock.
+     * @param _accounts The list of address which will lock.
+     */
+    function lockBatch(address[] _accounts) external onlyTokenOwner returns (bool) {
+        require(_accounts.length < 100);
+
+        for (uint i = 0; i < _accounts.length; i++) {
+            if (!lock(_accounts[i])) {
+                emit LockBatch(_accounts[i]);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @dev Batch process the account unlock.
+     * @param _accounts The list of address which will unlock.
+     */
+    function unlockBatch(address[] _accounts) external onlyTokenOwner returns (bool) {
+        require(_accounts.length < 100);
+
+        for (uint i = 0; i < _accounts.length; i++) {
+            if (!unlock(_accounts[i])) {
+                emit UnlockBatch(_accounts[i]);
+                return false;
+            }
+        }
         return true;
     }
 
