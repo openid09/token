@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 
 import "./SafeMath.sol";
 import "./Transferable.sol";
@@ -50,17 +50,17 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
         decimals = _decimals;
 
         totalSupply = _initialSupply.mul(10 ** uint(_decimals));
-        if (totalSupply == 0) {
-            revert();
-        }
+        require(totalSupply != 0);
 
         balances[tokenOwner] = totalSupply;
         suspended = true;
     }
 
+    /* redundant from solidity 0.4.0.
     function() public payable {
         revert();
     }
+    */
 
     /**
      * @dev Returns amount of total supply token.
@@ -85,7 +85,6 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
     function transfer(address _to, uint _tokens) public onlyUnlockAccount returns (bool) {
         if (suspended) return false;
         if (_to == address(0x0)) return false;
-        if (balances[msg.sender] < _tokens) return false;
         
         balances[msg.sender] = balances[msg.sender].sub(_tokens);
         balances[_to] = balances[_to].add(_tokens);
@@ -102,8 +101,6 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
     function transferFrom(address _from, address _to, uint _tokens) public onlyUnlockAccount returns (bool) {
         if (suspended) return false;
         if (_from == address(0x0) || _to == address(0x0)) return false;
-        if (balances[_from] < _tokens) return false;
-        if (allowed[_from][msg.sender] < _tokens) return false;
         
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_tokens);
         balances[_from] = balances[_from].sub(_tokens);
@@ -127,7 +124,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _spender The address which will spend the tokens.
      * @param _tokens Tokens amount.
      */
-    function approve(address _spender, uint _tokens) public returns (bool) {
+    function approve(address _spender, uint _tokens) public onlyUnlockAccount returns (bool) {
         if (suspended) return false;
 
         allowed[msg.sender][_spender] = _tokens;
@@ -151,7 +148,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
     /**
      * @dev Decrease the amount of tokens that an owner allowed to a spender.
      * @param _spender The address which will spend the funds.
-     * @param _subtractedValue The amount of tokens to decrease the allowance by.
+     * @param _subtractedTokens The amount of tokens to decrease the allowance by.
      */
     function decreaseApproval(address _spender, uint256 _subtractedTokens) public returns (bool) {
         if (suspended) return false;
@@ -160,7 +157,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
         if (_subtractedTokens > oldValue) {
             allowed[msg.sender][_spender] = 0;
         } else {
-            allowed[msg.sender][_spender] = oldValue.sub(_subtractedTokens);
+            allowed[msg.sender][_spender] -= _subtractedTokens;
         }
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
@@ -173,7 +170,6 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      */
     function distribute(address _to, uint _amount) public onlyTokenOwner returns (bool success) {
         if (_to == address(0x0)) return false;
-        if (balances[tokenOwner] < _amount) return false;
 
         balances[_to] = balances[_to].add(_amount);
         balances[tokenOwner] = balances[tokenOwner].sub(_amount);
@@ -188,6 +184,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      */
     function distributeBatch(address[] _to, uint[] _amount) external onlyTokenOwner returns (bool success) {
         require(_to.length < 100);
+        require(_to.length == _amount.length); 
 
         for(uint i = 0; i < _to.length; i++) {
             if (!distribute(_to[i], _amount[i])) {
@@ -231,8 +228,8 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _account The address which will lock.
      */
     function lock(address _account) public onlyTokenOwner returns (bool) {
-        require(_account != tokenOwner);
-        require(_account != address(0x0));
+        if (_account != tokenOwner) return false;
+        if (_account != address(0x0)) return false;
 
         lockedAccount[_account] = true;
         emit Locked(_account);
@@ -244,8 +241,8 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _account The address which will unlock.
      */
     function unlock(address _account) public onlyTokenOwner returns (bool) {
-        require(_account != tokenOwner);
-        require(_account != address(0x0));
+        if (_account != tokenOwner) return false;
+        if (_account != address(0x0)) return false;
 
         delete lockedAccount[_account];
         emit UnLocked(_account);
