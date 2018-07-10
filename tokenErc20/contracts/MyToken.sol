@@ -228,8 +228,8 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _account The address which will lock.
      */
     function lock(address _account) public onlyTokenOwner returns (bool) {
-        if (_account != tokenOwner) return false;
-        if (_account != address(0x0)) return false;
+        if (_account == tokenOwner) return false;
+        if (_account == address(0x0)) return false;
 
         lockedAccount[_account] = true;
         emit Locked(_account);
@@ -241,8 +241,8 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _account The address which will unlock.
      */
     function unlock(address _account) public onlyTokenOwner returns (bool) {
-        if (_account != tokenOwner) return false;
-        if (_account != address(0x0)) return false;
+        if (_account == tokenOwner) return false;
+        if (_account == address(0x0)) return false;
 
         delete lockedAccount[_account];
         emit UnLocked(_account);
