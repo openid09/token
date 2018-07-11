@@ -36,10 +36,10 @@ contract('[Test MyToken]', async (accounts) => {
         await instance.mint(accounts[0], 100e+18)
 
         let balance = await instance.balanceOf.call(accounts[0])
-        assert.equal(balance.valueOf(), 10100e+18, "10100 MTX Token isn't in the second account")
+        assert.equal(balance.valueOf(), 10100e+18, "10100 MTX Token isn't in the first account")
     })
 
-    it("Burning 100 MTX Token to first account", async() => {
+    it("Burning 10000 MTX Token to first account", async() => {
         await instance.burn(accounts[0], 10000e+18)
 
         let balance = await instance.balanceOf.call(accounts[0])
@@ -72,13 +72,13 @@ contract('[Test MyToken]', async (accounts) => {
         assert.ok(err instanceof Error)
 
         let balance = await instance.balanceOf.call(accounts[2])
-        assert.equal(balance.valueOf(), 0, "Second account isn't locked of transfer")
+        assert.equal(balance.valueOf(), 0, "Initial balance should be null.")
 
         await instance.unlock(accounts[1])
         
         await instance.transfer(accounts[2], 100e+18, {from: accounts[1]})
         balance = await instance.balanceOf.call(accounts[2])
 
-        assert.equal(balance.valueOf(), 100e+18, "Second account isn't unlocked of transfer")
+        assert.equal(balance.valueOf(), 100e+18, "Balance in second account is 100 MTX.")
     })
 })
