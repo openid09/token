@@ -137,7 +137,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _spender The address which will spend the funds.
      * @param _addedTokens The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint256 _addedTokens) public returns (bool) {
+    function increaseApproval(address _spender, uint256 _addedTokens) public onlyUnlockAccount returns (bool) {
         if (suspended) return false;
 
         allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedTokens);
@@ -150,7 +150,7 @@ contract MyToken is ERC20Basic, ERC20Extended, LockableToken {
      * @param _spender The address which will spend the funds.
      * @param _subtractedTokens The amount of tokens to decrease the allowance by.
      */
-    function decreaseApproval(address _spender, uint256 _subtractedTokens) public returns (bool) {
+    function decreaseApproval(address _spender, uint256 _subtractedTokens) public onlyUnlockAccount returns (bool) {
         if (suspended) return false;
 
         uint256 oldValue = allowed[msg.sender][_spender];
